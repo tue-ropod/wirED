@@ -1,2 +1,2 @@
 # wirED
-The mulitple hypothesis implementation of ED
+The mulitple hypothesis plugin implementation of ED

@@ -1,0 +1,9 @@
+#world_name: brsu
+
+plugins:
+  - name: wired
+    lib: libed_mulitple_hypothesis_plugin.so
+    frequency: 20
+    parameters:
+        text: "hello world"
+
