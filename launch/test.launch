@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
     <!-- Launch ED -->
-        <node pkg="ed" type="ed" name="ed" args="$(find wired)/launch/model-example-wirED.yaml" output="screen" />
+        <node pkg="ed" type="ed" name="ed" args="$(find wired)/launch/model-example-wirED.yaml" output="screen"/>
+        <!--<node pkg="ed" type="ed" name="ed" args="$(find wired)/launch/model-example-wirED.yaml" output="screen" launch-prefix="gdb -_-args"/>-->
 </launch>

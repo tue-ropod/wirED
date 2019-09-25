@@ -1,8 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(wired)
 
-#set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 #set(CMAKE_BUILD_TYPE Debug)
+
+set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined") 
+
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-std=c++11 HAS_STD_CPP11_FLAG)
+if(HAS_STD_CPP11_FLAG)
+  add_compile_options(-std=c++11)
+endif()
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
@@ -36,6 +44,8 @@ catkin_package(
   INCLUDE_DIRS include
   #LIBRARIES ed_core ed_io
  #   CATKIN_DEPENDS geometry_msgs message_runtime
+  CATKIN_DEPENDS
+    wire_core
 )
 
 ###########
@@ -46,7 +56,6 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
 )
-
 
 # ------------------------------------------------------------------------------------------------
 #                                          ED CORE
@@ -72,7 +81,7 @@ include_directories(
 add_library(ed_mulitple_hypothesis_plugin
   src/multiple_hypothesis_plugin.cpp
 )
-target_link_libraries(ed_mulitple_hypothesis_plugin ${catkin_LIBRARIES})
+target_link_libraries(ed_mulitple_hypothesis_plugin wire ${catkin_LIBRARIES})
 #add_dependencies(ed_mulitple_hypothesis_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 #add_library(ed_mulitple_hypothesis_plugin src/multiple_hypothesis_plugin.cpp)

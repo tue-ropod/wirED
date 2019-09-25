@@ -3,6 +3,8 @@
 
 #include <ed/plugin.h>
 
+//#include <memory>
+
 class WireED : public ed::Plugin
 {
 
@@ -17,8 +19,17 @@ public:
     void process(const ed::WorldModel& world, ed::UpdateRequest& req);
 
 private:
+        
+     // frame in which objects are tracked and stored in world model
+    std::string world_model_frame_id_;
 
-    std::string text_;
+    // frame in which objects are published
+    std::string output_frame_id_;
+
+    int max_num_hyps_;
+
+    double min_prob_ratio_;
+
 
 };
 
