@@ -8,15 +8,37 @@ plugins:
         world_model_frame: "/map"
         output_frame: "/map"
         max_num_hypotheses: 100
-        min_probability_ratio: 1e-10
-        
+        min_probability_ratio: 1e-10       
+                     
         knowledge: 
+          # The prior probabilities independent of the object class. The values do not have to sum up to one, only 
+          # the relative values are important. In general, it is useful to set the prior for false positives (clutter) 
+          # greater than the prior for new objects. 
+          
           prior_new: 0.14
           prior_existing: 0.14 
           prior_clutter: 0.72
+          
+          # default object class
           object_class: 
             - name: "object"
               behavior_model: 
+              
+                    # The position will be estimated using a position estimator. This estimator, defined in the package 
+                    # [wire_state_estimators] is a multiple model estimator that combines (i) a Kalman filter with a constant 
+                    # velocity motion model with (ii) a fixed state with fixed uncertainty.
+                  
+                    # After position updates, the position is represented by the Kalman filter estimate, during propagation, 
+                    # the 'trust' shifts towards the uniform distribution, which represents the 'object lost' hypothesis. The rate 
+                    # of the transitioning from Kalman filter to 'object lost' depends on the process noise of the Kalman filter, 
+                    # which is set by means of the max_acceleration parameter. The higher the maximum acceleration, the faster the 
+                    # uncertainty increase during propagation and the lower the 'trust' in the motion model. In case custom models
+                    # are preferred, this is possible (see the source code for examples).
+                  
+                    # Finally, the behavior model includes probabilistic models for new objects and clutter measurements. The type is 
+                    # uniform, which means that both new objects and clutter measurements can appear anywhere with equal probability.
+                    # The densities represent the height of the uniform distribution. 
+              
                  - attribute: "position"
                    model: "wire_state_estimators/PositionEstimator"
                    pnew:
@@ -34,7 +56,11 @@ plugins:
                        value: 1
                      - name: "fixed_pdf_cov"
                        value: 0.008
-
+                       
+                   # The second behavior model is for the discrete attribute color. It is a discrete property that will be estimated by a
+                   # discrete estimator. A probability mass function over 100 possible values will be maintained. If a measurement states 
+                   # that the color is red with a probability of 0.5, this means that any of the other 99 possible color will get a probability 0.5/99 = 0.005. 
+        
                  - attribute: "color"
                    model: "wire_state_estimators/DiscreteEstimator"
                    pnew:
@@ -43,7 +69,8 @@ plugins:
                    pclutter:
                      type: "discrete"
                      domain_size: 100
-
+                     
+                  # The third and fourth behavior models are for the discrete attributes class label and shape, the estimators are as explained above. 
                  - attribute: "class_label"
                    model: "wire_state_estimators/DiscreteEstimator"
                    pnew:
@@ -52,8 +79,8 @@ plugins:
                    pclutter:
                      type: "discrete"
                      domain_size: 100
-
-                 - attribute: "object"
+        
+                 - attribute: "shape"
                    model: "wire_state_estimators/DiscreteEstimator"
                    pnew:
                      type: "discrete"
@@ -61,3 +88,18 @@ plugins:
                    pclutter:
                      type: "discrete"
                      domain_size: 10
+              
+              # Here the behavior models for an object of class person can be defined. By defining the base to be object, all models defined in the default model set are used,
+              # unless defined differently here, i.e., only models that are different have to be defined.        
+            - name: "person"
+              base: "object"
+              behavior_model: 
+                - attribute: "name"
+                  model: "wire_state_estimators/DiscreteEstimator"
+                  pnew:
+                    type: "discrete"
+                    domain_size: 10
+                  pclutter:
+                    type: "discrete"
+                    domain_size: 10
+        
