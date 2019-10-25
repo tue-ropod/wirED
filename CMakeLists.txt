@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(wired)
 
-#set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 #set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined") 
@@ -37,12 +37,18 @@ find_package(catkin REQUIRED COMPONENTS
 #  DEPENDENCIES
 #)
 
+#find_package(Boost REQUIRED COMPONENTS thread)
+
+#include_directories(${Boost_INCLUDE_DIRS}) 
+
+
+
 ###################################
 ## catkin specific configuration ##
 ###################################
 catkin_package(
-  INCLUDE_DIRS include
-  #LIBRARIES ed_core ed_io
+  INCLUDE_DIRS include ${Boost_INCLUDE_DIRS}
+  LIBRARIES ed_core ed_io
  #   CATKIN_DEPENDS geometry_msgs message_runtime
   CATKIN_DEPENDS
     wire_core
@@ -77,15 +83,21 @@ include_directories(
 #                                               EXAMPLE PLUGIN
 # ------------------------------------------------------------------------------------------------
 
+#add_library(ed_data_buffer
+#  include/multiple_hypothesis_plugin.h
+#)
+
 
 add_library(ed_mulitple_hypothesis_plugin
-  src/multiple_hypothesis_plugin.cpp
+  src/multiple_hypothesis_plugin.cpp 
 )
-target_link_libraries(ed_mulitple_hypothesis_plugin wire ${catkin_LIBRARIES})
+target_link_libraries(ed_mulitple_hypothesis_plugin ed_core wire ${catkin_LIBRARIES})
 #add_dependencies(ed_mulitple_hypothesis_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 #add_library(ed_mulitple_hypothesis_plugin src/multiple_hypothesis_plugin.cpp)
 #add_library(ed_custom_properties_plugin examples/custom_properties/custom_properties_plugin.cpp)
+
+
 
 # ------------------------------------------------------------------------------------------------
 #                                                TESTS

@@ -1,15 +1,12 @@
 #include "multiple_hypothesis_plugin.h"
 
-//#include "wire/core/ClassModel.h"
-//#include "wire/core/Property.h"
-//#include "wire/core/Evidence.h"
-//#include "wire/core/EvidenceSet.h"
-//#include "wire/storage/SemanticObject.h"
-//#include "wire/core/ClassModel.h"
+#include "wire_msgs/WorldEvidence.h"
 #include "wire/storage/KnowledgeDatabase.h"
 #include "wire/util/ObjectModelParser.h"
+#include "wiredData.h"
 
 #include <iostream>
+#include <typeinfo>
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -69,6 +66,48 @@ void WireED::initialize(ed::InitData& init)
     printCounter_ = 0;
     
     maxLoopDuration_ = 1/this->getLoopFrequency();
+    
+    int bufferSize = 100; // TODO make configurable?
+   
+   
+    //bounded_buffer<wire_msgs::WorldEvidence> data_buf(bufferSize);
+    boost::shared_ptr<wiredData> data_buf(new wiredData); // TODO delete object at end of lifetime
+    
+   // std::cout << "data_buf type = " << data_buf.getType() << std::endl;
+    
+    data_buf->name = "wired MHT test buf";
+    
+  //  std::cout << "data_buf has remaining space = " << data_buf.getData().is_not_full() << std::endl;
+    
+    wire_msgs::WorldEvidence world_evidence;
+    
+    for (unsigned int i = 0; i < 10; i++) // to test
+    {
+            world_evidence.header.seq = i;
+            data_buf->getDataDerived().push_front(world_evidence);
+            std::cout << "data_buf has remaining space = " << data_buf->getDataDerived().is_not_full() << " i = " << i << std::endl;
+    }
+ 
+ 
+ 
+ 
+//    std::cout << "Init: data buf capacity = " << data_buf.getData().capacity() << std::endl;
+  //  std::cout << "init typeid(data_buf).name()" << typeid(data_buf).name()  << std::endl;
+ 
+ //   boost::shared_ptr<ArbitrayDataBuffer> testBufferElement(new ArbitrayDataBuffer);
+ //   *testBufferElement=data_buf;
+    
+  //  std::cout << "Init testBufferElement->name = " <<  testBufferElement->name << std::endl;
+    
+  //  std::cout << "init testBufferElement = " << testBufferElement << std::endl;
+    
+   // arbitraryData_.push_back(testBufferElement);
+    arbitraryData_.push_back(data_buf);
+    
+   //   std::cout << "init: arbitraryData_.size() = " << arbitraryData_.size()  << std::endl;
+    //      std::cout << "Init: arbitraryData_[0] = " << arbitraryData_[0] << std::endl;
+          
+    //      std::cout << "Init: Type = " << arbitraryData_[0]->getType() << std::endl;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -95,13 +134,34 @@ void WireED::processEvidence(const double max_duration) {
     int testsCounter = 0;
     int maxCounter = 100;
     while( testsCounter < maxCounter && ros::Time::now() - start_time < d) {
-
         ros::Time time_before_update = ros::Time::now();
  //std::cout << "processEvidence: going to process message with timestamp = " << evidence_buffer_.back().header.stamp << std::endl;
        // processEvidence(evidence_buffer_.back());
-          usleep(10000);         //make the programme waiting for 10ms
-          std::cout << testsCounter++ << std::endl;
-
+          usleep(10000);         //make the programme waiting for a bit. Here the real stuff is supposed to happen.
+          //std::cout << "Testcounter = " << testsCounter++ << std::endl;
+          
+         // std::vector<ArbitrayDataBuffer> testBuffer = getArbitraryDataBuffer();
+          
+          std::cout << "arbitraryData_.size() = " << arbitraryData_.size()  << std::endl;
+          
+          //boost::shared_ptr<ArbitrayDataBuffer> testBufferElement = arbitraryData_[0];
+          boost::shared_ptr<ArbitrayDataBuffer> testBufferElement = arbitraryData_[0];
+          std::cout << "arbitraryData_[0] = " << arbitraryData_[0] << std::endl;
+          std::cout << "test = " <<  testBufferElement->name << std::endl;
+          std::cout << "typeid(data_buf).name()" << typeid(arbitraryData_[0]).name()  << std::endl;
+          std::cout << "Type = " << arbitraryData_[0]->getType() << std::endl;
+          
+           boost::shared_ptr<wiredData> p_test = boost::static_pointer_cast<wiredData>( testBufferElement ); // TODO To be safe, all calls to dynamic_cast must either be unfailable or wrapped in a try/catch block. 
+          
+        //  boost::shared_ptr<wiredData> Variable = (boost::shared_ptr<wiredData>) testBufferElement; //TODO UGLY CAST
+          //std::cout << "seq test" << 
+          wire_msgs::WorldEvidence world_evidence;
+          p_test->getDataDerived().pop_back(&world_evidence);
+          std::cout << "seq test" << world_evidence.header.seq << std::endl;
+          
+          // wiredData testWiredData = arbitraryData_[0];
+          // std::cout << "typeid(testWiredData).name()" << typeid(testWiredData).name()  << std::endl;
+         
         last_update_duration = (ros::Time::now().toSec() - time_before_update.toSec());
         max_update_duration = std::max(max_update_duration, last_update_duration);
 

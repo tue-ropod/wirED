@@ -5,6 +5,10 @@
 
 #include "wire/logic/HypothesesTree.h"
 
+#include "wire_msgs/WorldEvidence.h"
+#include "wire_msgs/ObjectEvidence.h"
+#include "problib/conversions.h"
+
 //#include <memory>
 
 class WireED : public ed::Plugin
