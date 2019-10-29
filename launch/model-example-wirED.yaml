@@ -9,6 +9,8 @@ plugins:
         output_frame: "/map"
         max_num_hypotheses: 100
         min_probability_ratio: 1e-10       
+        bufferName: "MHT-buffer-test"
+        bufferSize: 80
                      
         knowledge: 
           # The prior probabilities independent of the object class. The values do not have to sum up to one, only 

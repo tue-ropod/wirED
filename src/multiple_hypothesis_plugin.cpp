@@ -25,23 +25,19 @@ WireED::~WireED()
 // ----------------------------------------------------------------------------------------------------
 
 void WireED::initialize(ed::InitData& init)
-{
-    std::cout << "WirED init" << std::endl;
-        
+{        
     // Try to read the config parameters from the ed config file. Otherwise load default ones which are set below
     tue::Configuration& config = init.config;
-    if (!config.value("world_model_frame", world_model_frame_id_, tue::OPTIONAL))
-            world_model_frame_id_ = "/map";
+    std::string bufferName;
+    int bufferSize;
+      
+    if (!config.value("world_model_frame", world_model_frame_id_, tue::OPTIONAL)) { world_model_frame_id_ = "/map";}
+    if (!config.value("output_frame", output_frame_id_, tue::OPTIONAL))           { output_frame_id_ = "/map";}
+    if (!config.value("max_num_hypotheses", max_num_hyps_, tue::OPTIONAL))        { max_num_hyps_ = 100;}
+    if (!config.value("min_probability_ratio", min_prob_ratio_, tue::OPTIONAL))   { min_prob_ratio_ = 1e-10;}
+    if (!config.value("bufferName", bufferName, tue::OPTIONAL))                   { bufferName = "MHT-buffer";}
+    if (!config.value("bufferSize", bufferSize, tue::OPTIONAL))                   { bufferSize = 100;}
         
-    if (!config.value("output_frame", output_frame_id_, tue::OPTIONAL))
-            output_frame_id_ = "/map";
-        
-    if (!config.value("max_num_hypotheses", max_num_hyps_, tue::OPTIONAL))
-            max_num_hyps_ = 100;
-        
-    if (!config.value("min_probability_ratio", min_prob_ratio_, tue::OPTIONAL))
-            min_prob_ratio_ = 1e-10;
-    
     // print init values
     std::cout << "WirED is initialized with the following values:" << std::endl;
     std::cout << "world_model_frame = " << world_model_frame_id_ << std::endl;
@@ -49,7 +45,7 @@ void WireED::initialize(ed::InitData& init)
     std::cout << "max_num_hypotheses = " << max_num_hyps_ << std::endl;
     std::cout << "min_probability_ratio = " << min_prob_ratio_ << std::endl;
     
-    std::cout << "\n\nThe following knowledge is loaded: " << std::endl;
+    std::cout << "\nThe following knowledge is loaded: " << std::endl;
     mhf::ObjectModelParser parser(config);
     if (!parser.parse(mhf::KnowledgeDatabase::getInstance())) 
     {
@@ -62,52 +58,27 @@ void WireED::initialize(ed::InitData& init)
     
     
     world_model_ = new mhf::HypothesisTree(max_num_hyps_, min_prob_ratio_);
-    
     printCounter_ = 0;
-    
     maxLoopDuration_ = 1/this->getLoopFrequency();
     
-    int bufferSize = 100; // TODO make configurable?
-   
-   
-    //bounded_buffer<wire_msgs::WorldEvidence> data_buf(bufferSize);
-    boost::shared_ptr<wiredData> data_buf(new wiredData); // TODO delete object at end of lifetime
-    
-   // std::cout << "data_buf type = " << data_buf.getType() << std::endl;
-    
-    data_buf->name = "wired MHT test buf";
-    
-  //  std::cout << "data_buf has remaining space = " << data_buf.getData().is_not_full() << std::endl;
-    
-    wire_msgs::WorldEvidence world_evidence;
-    
-    for (unsigned int i = 0; i < 10; i++) // to test
+    if(newBufferDesired( bufferName) )
     {
-            world_evidence.header.seq = i;
-            data_buf->getDataDerived().push_front(world_evidence);
-            std::cout << "data_buf has remaining space = " << data_buf->getDataDerived().is_not_full() << " i = " << i << std::endl;
+            createDatabuffer(boost::make_shared< wiredDataBuffer>(bufferSize) , bufferName );
+    } 
+
+    boost::shared_ptr<wiredDataBuffer> buf = boost::static_pointer_cast<wiredDataBuffer>( getDataBuffer() );
+    
+    std::cout << "Wired init: getDataBuffer() = " << getDataBuffer() << std::endl;
+    
+    // TEMP, some testdata  
+/*        wire_msgs::WorldEvidence world_evidence;
+    for (unsigned int i = 0; i < 100; i++) // to test
+    {
+            world_evidence.header.seq = 2*i;
+            buf->getDataDerived().push_front(world_evidence);
+            std::cout << "data_buf has remaining space = " << buf->getDataDerived().is_not_full() << " i = " << i << std::endl;
     }
- 
- 
- 
- 
-//    std::cout << "Init: data buf capacity = " << data_buf.getData().capacity() << std::endl;
-  //  std::cout << "init typeid(data_buf).name()" << typeid(data_buf).name()  << std::endl;
- 
- //   boost::shared_ptr<ArbitrayDataBuffer> testBufferElement(new ArbitrayDataBuffer);
- //   *testBufferElement=data_buf;
-    
-  //  std::cout << "Init testBufferElement->name = " <<  testBufferElement->name << std::endl;
-    
-  //  std::cout << "init testBufferElement = " << testBufferElement << std::endl;
-    
-   // arbitraryData_.push_back(testBufferElement);
-    arbitraryData_.push_back(data_buf);
-    
-   //   std::cout << "init: arbitraryData_.size() = " << arbitraryData_.size()  << std::endl;
-    //      std::cout << "Init: arbitraryData_[0] = " << arbitraryData_[0] << std::endl;
-          
-    //      std::cout << "Init: Type = " << arbitraryData_[0]->getType() << std::endl;
+  */  
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -135,35 +106,23 @@ void WireED::processEvidence(const double max_duration) {
     int maxCounter = 100;
     while( testsCounter < maxCounter && ros::Time::now() - start_time < d) {
         ros::Time time_before_update = ros::Time::now();
- //std::cout << "processEvidence: going to process message with timestamp = " << evidence_buffer_.back().header.stamp << std::endl;
-       // processEvidence(evidence_buffer_.back());
+        
           usleep(10000);         //make the programme waiting for a bit. Here the real stuff is supposed to happen.
-          //std::cout << "Testcounter = " << testsCounter++ << std::endl;
           
-         // std::vector<ArbitrayDataBuffer> testBuffer = getArbitraryDataBuffer();
-          
-          std::cout << "arbitraryData_.size() = " << arbitraryData_.size()  << std::endl;
-          
-          //boost::shared_ptr<ArbitrayDataBuffer> testBufferElement = arbitraryData_[0];
-          boost::shared_ptr<ArbitrayDataBuffer> testBufferElement = arbitraryData_[0];
-          std::cout << "arbitraryData_[0] = " << arbitraryData_[0] << std::endl;
-          std::cout << "test = " <<  testBufferElement->name << std::endl;
-          std::cout << "typeid(data_buf).name()" << typeid(arbitraryData_[0]).name()  << std::endl;
-          std::cout << "Type = " << arbitraryData_[0]->getType() << std::endl;
-          
-           boost::shared_ptr<wiredData> p_test = boost::static_pointer_cast<wiredData>( testBufferElement ); // TODO To be safe, all calls to dynamic_cast must either be unfailable or wrapped in a try/catch block. 
-          
-        //  boost::shared_ptr<wiredData> Variable = (boost::shared_ptr<wiredData>) testBufferElement; //TODO UGLY CAST
-          //std::cout << "seq test" << 
+         boost::shared_ptr<wiredDataBuffer> p_test =boost::static_pointer_cast<wiredDataBuffer>( getDataBuffer() );
           wire_msgs::WorldEvidence world_evidence;
-          p_test->getDataDerived().pop_back(&world_evidence);
-          std::cout << "seq test" << world_evidence.header.seq << std::endl;
+          std::cout << "wired: going to pop_back" << std::endl;
+          std::cout << "p_test = " << p_test << std::endl;          
           
-          // wiredData testWiredData = arbitraryData_[0];
-          // std::cout << "typeid(testWiredData).name()" << typeid(testWiredData).name()  << std::endl;
-         
-        last_update_duration = (ros::Time::now().toSec() - time_before_update.toSec());
-        max_update_duration = std::max(max_update_duration, last_update_duration);
+          if( p_test->getDataDerived().is_not_empty() ) // This ensures that we do not wait for until new data are published
+          {
+                  p_test->getDataDerived().pop_back(&world_evidence);
+                  std::cout << "stamp test " << world_evidence.header.stamp  << ", seq test = " <<  world_evidence.header.seq << std::endl; // First in First Out policy
+          }
+          
+          
+          last_update_duration = (ros::Time::now().toSec() - time_before_update.toSec());
+          max_update_duration = std::max(max_update_duration, last_update_duration);
 
         //evidence_buffer_.pop_back(); // TODO define this evidence buffer
     }

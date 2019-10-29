@@ -3,34 +3,15 @@
 
 #include <stdio.h>
 
-/*
-// EXAMPLE
-template <typename T>
-class Foo : public Bar
+class wiredDataBuffer : public ArbitrayDataBuffer
 {
-T member_;
-public:
-   Foo(){}
-   T& member() {return member_;}
-   virtual bar() {printf("bar");}
-};
-*/
 
-//template <typename T>
-class wiredData : public ArbitrayDataBuffer
-{
-//wire_msgs::WorldEvidence data;
-
-int bufferSize; // TODO make configurable?
-
-bounded_buffer<wire_msgs::WorldEvidence> data_buf; // TODO make pointer? Make buffer size variable
+bounded_buffer<wire_msgs::WorldEvidence> data_buf; //TODO Make buffer size variable?
 
 public:
-   wiredData(  ): bufferSize(100), data_buf(bufferSize) {}        // verplaatsen naar base class?
+   wiredDataBuffer( int bufferSizeIn = 100 ): ArbitrayDataBuffer(bufferSizeIn), data_buf(bufferSize) { }      
    
-   bounded_buffer<wire_msgs::WorldEvidence>& getDataDerived() {return data_buf;}
-  // virtual bar() {printf("bar");}
-   std::string getName() {return name;}
-   
-    std::string getType(){ return "wiredData"; };
+   // Use this function in order to obtain the data. Policy is to wait if data are available. If a fixed rate is desired (if it is not desired to wait untill 
+   // new data become available, then check with the .is_not_empty()-method of the bounded_buffer.
+   bounded_buffer<wire_msgs::WorldEvidence>& getDataDerived() { return data_buf;}   // TODO? Move to base class by adding a templated function?
 };
