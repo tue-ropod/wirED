@@ -3,26 +3,36 @@
 
 #include <ed/plugin.h>
 
+#include "wire/core/datatypes.h"
+
+#include "wire/logic/Hypothesis.h"
 #include "wire/logic/HypothesesTree.h"
 
 #include "wire_msgs/WorldEvidence.h"
 #include "wire_msgs/ObjectEvidence.h"
+#include "wire_msgs/ObjectState.h" // TEMP TODO via ED
+#include "wire_msgs/WorldState.h"  // TEMP TODO via ED
 #include "problib/conversions.h"
 
-//#include <memory>
+#include "wire/storage/KnowledgeDatabase.h"
+#include "wire/util/ObjectModelParser.h"
+#include "wiredData.h"
+
+#include "wire/core/ClassModel.h"
+#include "wire/core/Property.h"
+#include "wire/core/Evidence.h"
+#include "wire/core/EvidenceSet.h"
+#include "wire/storage/SemanticObject.h"
+#include "wire/util/ObjectModelParser.h"
+
+// transform listener
+#include "tf/transform_listener.h"
 
 class WireED : public ed::Plugin
 {   
-  /*  class HypothesisTree;
-    class Hypothesis;
-    class KnowledgeProbModel;
-    class PropertySet;
-    class ClassModel;
-    class SemanticObject;
-    */  
-public:
 
-    WireED();
+public:
+    WireED(tf::TransformListener* tf_listener = 0);
 
     virtual ~WireED();
 
@@ -30,14 +40,20 @@ public:
 
     void process(const ed::WorldModel& world, ed::UpdateRequest& req);
     
+    void publish() const; // TEMP
+    
     void showStatistics() const;
     
     void processEvidence(const double max_duration);
-
-private:
+    
+    void processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg);
+    
+    const std::list<mhf::SemanticObject*>& getMAPObjects() const;
+    
+protected:
         
      // frame in which objects are tracked and stored in world model
-    std::string world_model_frame_id_;
+    std::string hypothesisTree_frame_id_;
 
     // frame in which objects are published
     std::string output_frame_id_;
@@ -47,9 +63,13 @@ private:
     double min_prob_ratio_;
     
     // multiple hypothesis filter_
-    mhf::HypothesisTree* world_model_;
+    mhf::HypothesisTree* hypothesisTree_;
     
     int printCounter_;
+    
+    // transform listener
+    tf::TransformListener* tf_listener_;
+    bool is_tf_owner_;
     
     // computation time needed for last tree update
     double last_update_duration;
@@ -57,6 +77,20 @@ private:
     
     double maxLoopDuration_;
     
+    std::stringstream warnings_;
+    
+    ros::Time last_update_;
+    
+   // world model publishers
+    ros::Publisher pub_wm_; // TEMP
+    
+    bool transformPosition(std::shared_ptr<const pbl::PDF> pdf_in, const std::string& frame_in, std::shared_ptr<pbl::Gaussian> pdf_out) const;
+
+    bool transformOrientation(std::shared_ptr<const pbl::PDF> pdf_in, const std::string& frame_in, std::shared_ptr<pbl::Gaussian> pdf_out) const;  
+    
+    bool objectToMsg(const mhf::SemanticObject& obj, wire_msgs::ObjectState& msg) const; // TEMP TODO publish objects in ED
+
+    bool hypothesisToMsg(const mhf::Hypothesis& hyp, wire_msgs::WorldState& msg) const; // TEMP TODO via ED-gui server
 };
 
 #endif
