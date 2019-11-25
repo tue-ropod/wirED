@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(wired)
 
-#set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 #set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined") 
@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   ed
   wire_core
   wire_msgs
+  wire_state_estimators
 )
 
 #find_package(PCL REQUIRED)
@@ -51,7 +52,7 @@ catkin_package(
   LIBRARIES ed_core ed_io
  #   CATKIN_DEPENDS geometry_msgs message_runtime
   CATKIN_DEPENDS
-    wire_core
+    wire_core wire_state_estimators
 )
 
 ###########
@@ -88,13 +89,14 @@ include_directories(
 #)
 
 
-add_library(ed_mulitple_hypothesis_plugin
+add_library(ed_multiple_hypothesis_plugin
   src/multiple_hypothesis_plugin.cpp 
 )
-target_link_libraries(ed_mulitple_hypothesis_plugin ed_core wire ${catkin_LIBRARIES})
-#add_dependencies(ed_mulitple_hypothesis_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS})
+target_link_libraries(ed_multiple_hypothesis_plugin ed_core wire ${catkin_LIBRARIES})
+add_dependencies(ed_multiple_hypothesis_plugin wire_state_estimators ${${PROJECT_NAME}_EXPORTED_TARGETS})
+#add_dependencies(ed_multiple_hypothesis_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
-#add_library(ed_mulitple_hypothesis_plugin src/multiple_hypothesis_plugin.cpp)
+#add_library(ed_multiple_hypothesis_plugin src/multiple_hypothesis_plugin.cpp)
 #add_library(ed_custom_properties_plugin examples/custom_properties/custom_properties_plugin.cpp)
 
 

@@ -1,4 +1,5 @@
 #include "multiple_hypothesis_plugin.h"
+#include <ed/update_request.h>
 //#include "wire_core/include/wire/WorldModelROS.h"
 
 
@@ -8,13 +9,13 @@
 
 // ----------------------------------------------------------------------------------------------------
 
-WireED::WireED(tf::TransformListener* tf_listener) :   tf_listener_(tf_listener), is_tf_owner_(false)
+Wired::Wired(tf::TransformListener* tf_listener) :   tf_listener_(tf_listener), is_tf_owner_(false)
 {
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-WireED::~WireED()
+Wired::~Wired()
 {
     // delete multiple hypothesis filter_
         if(hypothesisTree_)
@@ -25,7 +26,7 @@ WireED::~WireED()
 
 // ----------------------------------------------------------------------------------------------------
 
-void WireED::initialize(ed::InitData& init)
+void Wired::initialize(ed::InitData& init)
 {        
     // Try to read the config parameters from the ed config file. Otherwise load default ones which are set below
     tue::Configuration& config = init.config;
@@ -55,8 +56,8 @@ void WireED::initialize(ed::InitData& init)
     }
     
     // Publishers
-    ros::NodeHandle n("~");
-    pub_wm_ = n.advertise<wire_msgs::WorldState>("/world_state", 10); // TEMP TODO via ED
+  //  ros::NodeHandle n("~");
+    //pub_wm_ = n.advertise<wire_msgs::WorldState>("/world_state", 10); // TEMP TODO via ED
     
     if (config.hasError())
         return;      
@@ -81,10 +82,10 @@ void WireED::initialize(ed::InitData& init)
 
 // ----------------------------------------------------------------------------------------------------
 
-void WireED::process(const ed::WorldModel& world, ed::UpdateRequest& req)
+void Wired::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 {   
-        std::cout << "WIRED: process" << std::endl;
-    processEvidence(maxLoopDuration_);
+    std::cout << "WIRED: process" << std::endl;
+    processEvidence(maxLoopDuration_, req);
          
     ++printCounter_;
     if (printCounter_ >= 15) {
@@ -93,7 +94,7 @@ void WireED::process(const ed::WorldModel& world, ed::UpdateRequest& req)
     } 
 }
 
-void WireED::processEvidence(const double max_duration) {
+void Wired::processEvidence(const double max_duration, ed::UpdateRequest& req) {
 
     ros::Time start_time = ros::Time::now();
 //    std::cout << "Start time = " << start_time.toSec()  << std::endl;
@@ -120,12 +121,13 @@ void WireED::processEvidence(const double max_duration) {
     ros::Duration duration = ros::Time::now() - start_time;
     bool timeCheck = ros::Time::now() - start_time < d;
     
-    publish();
+    //publish();
+    hypothesis2Entity(hypothesisTree_->getMAPHypothesis(), req);
    
     //std::cout << "Duration = " << duration.toSec() << " time check = "  << timeCheck << " max_duration = " << max_duration << std::endl;//" evidence buffer size  = " << evidence_buffer_.size() << std::endl;
 }
 
-void WireED::processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg) {
+void Wired::processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg) {
     ros::Time current_time = ros::Time::now();
 
     if (current_time < last_update_) {
@@ -202,7 +204,7 @@ void WireED::processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg)
     }
 }
 
-bool WireED::transformPosition(std::shared_ptr<const pbl::PDF> pdf_in, const std::string& frame_in, std::shared_ptr<pbl::Gaussian> pdf_out) const {
+bool Wired::transformPosition(std::shared_ptr<const pbl::PDF> pdf_in, const std::string& frame_in, std::shared_ptr<pbl::Gaussian> pdf_out) const {
     std::shared_ptr<const pbl::Gaussian> gauss = pbl::PDFtoGaussian(pdf_in);
 
     if (!gauss) {
@@ -230,7 +232,7 @@ bool WireED::transformPosition(std::shared_ptr<const pbl::PDF> pdf_in, const std
     return true;
 }
 
-bool WireED::transformOrientation(std::shared_ptr<const pbl::PDF> pdf_in, const std::string& frame_in, std::shared_ptr<pbl::Gaussian> pdf_out) const {
+bool Wired::transformOrientation(std::shared_ptr<const pbl::PDF> pdf_in, const std::string& frame_in, std::shared_ptr<pbl::Gaussian> pdf_out) const {
     std::shared_ptr<const pbl::Gaussian> gauss = pbl::PDFtoGaussian(pdf_in);
 
     if (!gauss) {
@@ -259,7 +261,7 @@ bool WireED::transformOrientation(std::shared_ptr<const pbl::PDF> pdf_in, const 
     return true;
 }
 
-bool WireED::objectToMsg(const mhf::SemanticObject& obj, wire_msgs::ObjectState& msg) const { // TODO TEMP
+/*bool Wired::objectToMsg(const mhf::SemanticObject& obj, wire_msgs::ObjectState& msg) const { // TODO TEMP
     msg.ID = obj.getID();
 
     const std::map<mhf::Attribute, mhf::Property*>& properties = obj.getPropertyMap();
@@ -275,57 +277,170 @@ bool WireED::objectToMsg(const mhf::SemanticObject& obj, wire_msgs::ObjectState&
 
     return true;
 }
-
-bool WireED::hypothesisToMsg(const mhf::Hypothesis& hyp, wire_msgs::WorldState& msg) const { // TODO TEMP
+*/
+/*bool Wired::hypothesis2Msg(const mhf::Hypothesis& hyp, wire_msgs::WorldState& msg) const { // TODO TEMP
     ros::Time time = ros::Time::now();
 
     msg.header.frame_id = hypothesisTree_frame_id_;
     msg.header.stamp = time;
+
+    int counter = 0;
+
+    for(std::list<mhf::SemanticObject*>::const_iterator it = hyp.getObjects().begin(); it != hyp.getObjects().end(); ++it) {
+        mhf::SemanticObject* obj_clone = (*it)->clone();
+        
+        obj_clone->propagate(time.toSec());
+        
+        std::shared_ptr<const pbl::PDF> pdf = obj_clone->getProperty("position")->getValue();
+        wire_msgs::ObjectState obj_msg;
+        if (objectToMsg(*obj_clone, obj_msg)) {
+            msg.objects.push_back(obj_msg);
+        }
+
+        delete obj_clone;
+    }
+    return true;
+}
+*/
+
+// What are the relevant properties which should be converted in a entity? -> featureProperties & pose for this case, . Is this information 
+// present in the entity descriptions?
+// Possible to add PDF's to ED as a list of properties?!
+
+// Check which object-ids are not present anymore from latest hypothesis and request to remove them.
+// 
+
+// Visualisation: ED_GUI_SERVER. Is the information available there sufficient? -> yes, if we convert it to a featureproperties-type
+
+bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req) const {
+    ros::Time time = ros::Time::now();
+
+   // msg.header.frame_id = hypothesisTree_frame_id_;
+   // msg.header.stamp = time;
     
     //std::cout << "properties_.size() = " << hyp.getObjects().size() << std::endl;
     int counter = 0;
     std::cout << "For MAP-hypotheis: n Objects = " << hyp.getObjects().size() << std::endl;
 
     for(std::list<mhf::SemanticObject*>::const_iterator it = hyp.getObjects().begin(); it != hyp.getObjects().end(); ++it) {
-        //counter++;
-         std::cout << "Count = " << counter++ << "time = " << time  << std::endl;
         mhf::SemanticObject* obj_clone = (*it)->clone();
-        
-        std::cout << "Prop object" << std::endl;
         obj_clone->propagate(time.toSec());
-std::cout << "get pos value" << std::endl;
-        
-        std::shared_ptr<const pbl::PDF> pdf = obj_clone->getProperty("position")->getValue();
-        
-        std::cout << "object-pdf = " << pdf->toString() << std::endl;
-        
-        wire_msgs::ObjectState obj_msg;
-        if (objectToMsg(*obj_clone, obj_msg)) {
-                
-            msg.objects.push_back(obj_msg);
+
+        if (object2Entity(*obj_clone, req)) {
+           // msg.objects.push_back(obj_msg);
         }
 
         delete obj_clone;
-        std::cout << "obj deleted" << std::endl;
-    }
+    } 
+    
+    for(std::vector<mhf::ObjectID>::const_iterator it = objectIDs2entitiesPrev_->begin(); it != objectIDs2entitiesPrev_->end(); ++it) 
+    {
+             // remove all objects which are not in the current hypothesis anymore
+            mhf::ObjectID objectID = *it;
+            ed::UUID id = getEntityIDForMHTObject(objectID);
+            req.removeEntity (id );            
+}
+    objectIDs2entitiesPrev_->clear();
+    
+    std::vector<mhf::ObjectID>* objectIDsForConversion; 
+    *objectIDsForConversion = *objectIDs2entitiesPrev_;
+    *objectIDs2entitiesPrev_ = *objectIDs2entities_;
+    *objectIDs2entities_ = *objectIDsForConversion;
+    
     return true;
 }
 
-void WireED::publish() const { // TODO TEMP: convert to entities and remove old entities.
-    wire_msgs::WorldState map_world_msg;
-    hypothesisToMsg(hypothesisTree_->getMAPHypothesis(), map_world_msg); // TODO temp, convert to ED-entities
+bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req) const
+{
+         ros::Time time = ros::Time::now();
+         std::shared_ptr<const pbl::PDF> pdf = obj.getProperty("positionAndDimension")->getValue();
+       
+         ed::UUID id = getEntityIDForMHTObject(obj.getID());
+         
+      //   std::vector<mhf::ObjectID> objectIDs2entities;
+        
+         if( pdf )
+         {
+                 tracking::FeatureProperties featureProperties;
+                 featureProperties.setFeatureProperties(pdf);
+                 double existenceProbability = 1.0; // TODO magic number
+                        
+                 geo::Pose3D pose;
+                 
+                 if ( featureProperties.getFeatureProbabilities().get_pCircle() < featureProperties.getFeatureProbabilities().get_pRectangle() )
+                {
+                        // determine corners
+                        tracking::Rectangle rectangle = featureProperties.getRectangle();
+                        pose = rectangle.getPose();
+                }
+                else
+                {
+                        // determine cilinder-properties
+                        tracking::Circle circle = featureProperties.getCircle();
+                        pose = circle.getPose();
+                }
+                
+                        
+                        req.setProperty ( id, featureProperties_, featureProperties ); // TODO convert wire ID to ED ID
+                        req.setLastUpdateTimestamp ( id, time.toSec() ); // TODO desired time?
+                        req.setPose ( id, pose );
+                        req.setExistenceProbability ( id, existenceProbability );
+                //         int nMeasurements = entityProperties.getNMeasurements() + 1;
+                        // entityProperties.setNMeasurements(  nMeasurements ); TODO?
+
+                         objectIDs2entities_->push_back(obj.getID());
+                        if(objectIDs2entitiesPrev_->size() > 0)
+                        {
+                                std::vector<mhf::ObjectID>::const_iterator it = std::find(objectIDs2entitiesPrev_->begin(), objectIDs2entitiesPrev_->end(),  obj.getID());
+                                if (it != objectIDs2entitiesPrev_->end())
+                                {
+                                        objectIDs2entitiesPrev_->erase(it);
+                                }
+                        }
+           }
+           
+           
+           //
+           
+        
+        // TODO general properties and PDF's to ED. 
+        /*
+          msg.ID = obj.getID();
+
+    const std::map<mhf::Attribute, mhf::Property*>& properties = obj.getPropertyMap();
+
+    for(std::map<mhf::Attribute, mhf::Property*>::const_iterator it_prop = properties.begin(); it_prop != properties.end(); ++it_prop) {
+        mhf::Property* prop = it_prop->second;
+
+        wire_msgs::Property prop_msg;
+        prop_msg.attribute = mhf::AttributeConv::attribute_str(it_prop->first);
+        pbl::PDFtoMsg(*prop->getValue(), prop_msg.pdf);
+        msg.properties.push_back(prop_msg);
+    }
+
+    return true;
+    */
+}
+
+
+/*void Wired::publish() const { // TODO TEMP: convert to entities and remove old entities.
+   // wire_msgs::WorldState map_world_msg;
+   // hypothesis2Msg(hypothesisTree_->getMAPHypothesis(), map_world_msg); // TODO temp, convert to ED-entities
+    
 
     // Publish results
-    pub_wm_.publish(map_world_msg);
+   // pub_wm_.publish(map_world_msg);
 
-}
+}*/
 
-const std::list<mhf::SemanticObject*>& WireED::getMAPObjects() const {
+/*const std::list<mhf::SemanticObject*>& Wired::getMAPObjects() const {
     return hypothesisTree_->getMAPObjects();
-}
+}*/
 
 
-void WireED::showStatistics() const {
+ed::UUID Wired::getEntityIDForMHTObject(mhf::ObjectID objectID) const { return "MHT-" + std::to_string(objectID) + "-laserTracking"; }
+
+void Wired::showStatistics() const {
     std::printf("***** %f *****\n", ros::Time::now().toSec());
     hypothesisTree_->showStatistics();
     std::cout << "Num MAP objects:      " << hypothesisTree_->getMAPObjects().size() << std::endl;
@@ -347,4 +462,4 @@ void WireED::showStatistics() const {
     */
 }
 
-ED_REGISTER_PLUGIN(WireED)
+ED_REGISTER_PLUGIN(Wired)

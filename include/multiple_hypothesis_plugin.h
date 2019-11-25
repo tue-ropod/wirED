@@ -25,30 +25,32 @@
 #include "wire/storage/SemanticObject.h"
 #include "wire/util/ObjectModelParser.h"
 
+#include "featureProperties.h"
+
 // transform listener
 #include "tf/transform_listener.h"
 
-class WireED : public ed::Plugin
+class Wired : public ed::Plugin
 {   
 
 public:
-    WireED(tf::TransformListener* tf_listener = 0);
+    Wired(tf::TransformListener* tf_listener = 0);
 
-    virtual ~WireED();
+    virtual ~Wired();
 
     void initialize(ed::InitData& init);
 
     void process(const ed::WorldModel& world, ed::UpdateRequest& req);
     
-    void publish() const; // TEMP
+   // void publish() const; // TEMP
     
     void showStatistics() const;
     
-    void processEvidence(const double max_duration);
+    void processEvidence(const double max_duration, ed::UpdateRequest& req);
     
     void processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg);
     
-    const std::list<mhf::SemanticObject*>& getMAPObjects() const;
+//     const std::list<mhf::SemanticObject*>& getMAPObjects() const;
     
 protected:
         
@@ -81,6 +83,13 @@ protected:
     
     ros::Time last_update_;
     
+    // vector containing all object id's of the previous hypothesis. Used to check if there are objects in the previous  hypothesis which are not in the current one anymore.
+    std::vector<mhf::ObjectID>* objectIDs2entitiesPrev_; 
+    
+    std::vector<mhf::ObjectID>* objectIDs2entities_;
+    
+    ed::PropertyKey<tracking::FeatureProperties> featureProperties_; 
+    
    // world model publishers
     ros::Publisher pub_wm_; // TEMP
     
@@ -88,9 +97,19 @@ protected:
 
     bool transformOrientation(std::shared_ptr<const pbl::PDF> pdf_in, const std::string& frame_in, std::shared_ptr<pbl::Gaussian> pdf_out) const;  
     
-    bool objectToMsg(const mhf::SemanticObject& obj, wire_msgs::ObjectState& msg) const; // TEMP TODO publish objects in ED
+//    bool objectToMsg(const mhf::SemanticObject& obj, wire_msgs::ObjectState& msg) const;
+    
+    bool objectToEntity(const mhf::SemanticObject& obj,ed::UpdateRequest& req) const;
 
-    bool hypothesisToMsg(const mhf::Hypothesis& hyp, wire_msgs::WorldState& msg) const; // TEMP TODO via ED-gui server
+//    bool hypothesis2Msg(const mhf::Hypothesis& hyp, wire_msgs::WorldState& msg) const;
+
+    bool hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req) const;
+    
+    bool object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req) const;
+    
+    ed::UUID getEntityIDForMHTObject(mhf::ObjectID objectID) const;
+    
+
 };
 
 #endif
