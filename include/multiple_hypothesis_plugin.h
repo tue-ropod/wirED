@@ -26,6 +26,9 @@
 #include "wire/util/ObjectModelParser.h"
 
 #include "featureProperties.h"
+#include "featureProperties_info.h"
+
+//ed_multiple_hypothesis_plugin
 
 // transform listener
 #include "tf/transform_listener.h"

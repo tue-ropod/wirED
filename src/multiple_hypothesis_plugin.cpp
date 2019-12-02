@@ -11,6 +11,8 @@
 
 Wired::Wired(tf::TransformListener* tf_listener) :   tf_listener_(tf_listener), is_tf_owner_(false)
 {
+        objectIDs2entitiesPrev_ = new std::vector<mhf::ObjectID>;
+        objectIDs2entities_ = new std::vector<mhf::ObjectID>;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -21,6 +23,16 @@ Wired::~Wired()
         if(hypothesisTree_)
         {
                 delete hypothesisTree_;
+        }
+        
+        if( objectIDs2entitiesPrev_)
+        {
+                 delete objectIDs2entitiesPrev_;
+        }
+                      
+        if( objectIDs2entities_)
+        {
+                 delete objectIDs2entities_;
         }
 }
 
@@ -78,13 +90,16 @@ void Wired::initialize(ed::InitData& init)
     } 
 
     boost::shared_ptr<wiredDataBuffer> buf = boost::static_pointer_cast<wiredDataBuffer>( getDataBuffer() ); 
+    
+        
+    init.properties.registerProperty ( "Feature", featureProperties_, new FeaturPropertiesInfo );
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 void Wired::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 {   
-    std::cout << "WIRED: process" << std::endl;
+//     std::cout << "WIRED: process" << std::endl;
     processEvidence(maxLoopDuration_, req);
          
     ++printCounter_;
@@ -108,7 +123,7 @@ void Wired::processEvidence(const double max_duration, ed::UpdateRequest& req) {
     { 
         ros::Time time_before_update = ros::Time::now();     
         
-        std::cout << "wirebuffer: has data = " <<wiredBuffer->getBuffer().is_not_empty() << std::endl;
+//         std::cout << "wirebuffer: has data = " <<wiredBuffer->getBuffer().is_not_empty() << std::endl;
         wiredBuffer->getBuffer().pop_back(&world_evidence);        
         processEvidence(world_evidence);
           
@@ -159,6 +174,8 @@ void Wired::processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg) 
         for(std::vector<wire_msgs::Property>::const_iterator it_prop = evidence.properties.begin(); it_prop != evidence.properties.end(); ++it_prop ) {
             const wire_msgs::Property& prop = *it_prop;
 
+//             std::cout << " Wired::processEvidence: properties = " << prop.attribute << ", " << prop.pdf << std::endl;
+            
             std::shared_ptr<pbl::PDF> pdf = pbl::msgToPDF(prop.pdf);
             
       //       std::cout << "wired: prop.attribute = " << prop.attribute << " pdf = " << prop.pdf << std::endl;
@@ -320,7 +337,7 @@ bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req
     
     //std::cout << "properties_.size() = " << hyp.getObjects().size() << std::endl;
     int counter = 0;
-    std::cout << "For MAP-hypotheis: n Objects = " << hyp.getObjects().size() << std::endl;
+//     std::cout << "For MAP-hypotheis: n Objects = " << hyp.getObjects().size() << std::endl;
 
     for(std::list<mhf::SemanticObject*>::const_iterator it = hyp.getObjects().begin(); it != hyp.getObjects().end(); ++it) {
         mhf::SemanticObject* obj_clone = (*it)->clone();
@@ -332,22 +349,24 @@ bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req
 
         delete obj_clone;
     } 
-    
-    for(std::vector<mhf::ObjectID>::const_iterator it = objectIDs2entitiesPrev_->begin(); it != objectIDs2entitiesPrev_->end(); ++it) 
-    {
-             // remove all objects which are not in the current hypothesis anymore
-            mhf::ObjectID objectID = *it;
-            ed::UUID id = getEntityIDForMHTObject(objectID);
-            req.removeEntity (id );            
-}
-    objectIDs2entitiesPrev_->clear();
-    
-    std::vector<mhf::ObjectID>* objectIDsForConversion; 
-    *objectIDsForConversion = *objectIDs2entitiesPrev_;
-    *objectIDs2entitiesPrev_ = *objectIDs2entities_;
-    *objectIDs2entities_ = *objectIDsForConversion;
-    
-    return true;
+  
+//   std::cout << "objectIDs2entitiesPrev_ = " << objectIDs2entitiesPrev_ << std::endl;
+  
+  for(std::vector<mhf::ObjectID>::const_iterator it = objectIDs2entitiesPrev_->begin(); it != objectIDs2entitiesPrev_->end(); ++it) 
+  {
+        // remove all objects which are not in the current hypothesis anymore
+        mhf::ObjectID objectID = *it;
+        ed::UUID id = getEntityIDForMHTObject(objectID);
+        req.removeEntity (id );
+   }
+        
+        objectIDs2entitiesPrev_->clear();
+     
+     std::vector<mhf::ObjectID>* objectIDsForConversion = objectIDs2entitiesPrev_; 
+     *objectIDs2entitiesPrev_ = *objectIDs2entities_;
+     *objectIDs2entities_ = *objectIDsForConversion;
+        
+     return true;
 }
 
 bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req) const
@@ -380,7 +399,7 @@ bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req
                         pose = circle.getPose();
                 }
                 
-                        
+//                         std::cout << "multiple hypothesis plugin: featureProperties_.idx = " << featureProperties_.idx << std::endl;
                         req.setProperty ( id, featureProperties_, featureProperties ); // TODO convert wire ID to ED ID
                         req.setLastUpdateTimestamp ( id, time.toSec() ); // TODO desired time?
                         req.setPose ( id, pose );
@@ -388,7 +407,7 @@ bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req
                 //         int nMeasurements = entityProperties.getNMeasurements() + 1;
                         // entityProperties.setNMeasurements(  nMeasurements ); TODO?
 
-                         objectIDs2entities_->push_back(obj.getID());
+                        objectIDs2entities_->push_back(obj.getID());
                         if(objectIDs2entitiesPrev_->size() > 0)
                         {
                                 std::vector<mhf::ObjectID>::const_iterator it = std::find(objectIDs2entitiesPrev_->begin(), objectIDs2entitiesPrev_->end(),  obj.getID());
