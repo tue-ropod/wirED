@@ -45,7 +45,7 @@ public:
 
     void process(const ed::WorldModel& world, ed::UpdateRequest& req);
     
-   // void publish() const; // TEMP
+//    void publish() const; // TODO TEMP
     
     void showStatistics() const;
     
@@ -53,7 +53,9 @@ public:
     
     void processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg);
     
-//     const std::list<mhf::SemanticObject*>& getMAPObjects() const;
+     const std::list<mhf::SemanticObject*>* getMAPObjects() const;// TODO TEMP?
+     
+     void swapPointers(std::vector<mhf::ObjectID> **r, std::vector<mhf::ObjectID> **s);
     
 protected:
         
@@ -94,19 +96,19 @@ protected:
     ed::PropertyKey<tracking::FeatureProperties> featureProperties_; 
     
    // world model publishers
-    ros::Publisher pub_wm_; // TEMP
+ //   ros::Publisher pub_wm_; // TODO TEMP
     
     bool transformPosition(std::shared_ptr<const pbl::PDF> pdf_in, const std::string& frame_in, std::shared_ptr<pbl::Gaussian> pdf_out) const;
 
     bool transformOrientation(std::shared_ptr<const pbl::PDF> pdf_in, const std::string& frame_in, std::shared_ptr<pbl::Gaussian> pdf_out) const;  
     
-//    bool objectToMsg(const mhf::SemanticObject& obj, wire_msgs::ObjectState& msg) const;
+  //  bool objectToMsg(const mhf::SemanticObject& obj, wire_msgs::ObjectState& msg) const; // TODO TEMP
     
     bool objectToEntity(const mhf::SemanticObject& obj,ed::UpdateRequest& req) const;
 
-//    bool hypothesis2Msg(const mhf::Hypothesis& hyp, wire_msgs::WorldState& msg) const;
+   // bool hypothesis2Msg(const mhf::Hypothesis& hyp, wire_msgs::WorldState& msg) const; // TODO TEMP
 
-    bool hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req) const;
+    bool hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req);
     
     bool object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req) const;
     
