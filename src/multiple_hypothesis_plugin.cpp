@@ -469,7 +469,7 @@ bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req
                 // TESTED: nan of circle is within its properties, it is not due to the conversion to the circle pose.
                 
 //                 std::cout << "featureproperties update request: " << std::endl;
-                featureProperties.printProperties();
+//                 featureProperties.printProperties();
                 
                 req.setProperty ( id, featureProperties_, featureProperties );
                 req.setLastUpdateTimestamp ( id, time.toSec() ); // TODO desired time?
