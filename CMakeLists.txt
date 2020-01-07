@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   wire_state_estimators
 )
 
+#find_package(wire_state_estimators
 #find_package(PCL REQUIRED)
 #find_package(OpenCV REQUIRED)
 
@@ -49,7 +50,7 @@ find_package(catkin REQUIRED COMPONENTS
 ###################################
 catkin_package(
   INCLUDE_DIRS include ${Boost_INCLUDE_DIRS}
-  LIBRARIES ed_core ed_io
+  LIBRARIES  ${PROJECT_NAME}
  #   CATKIN_DEPENDS geometry_msgs message_runtime
   CATKIN_DEPENDS
     wire_core wire_state_estimators
@@ -88,14 +89,14 @@ include_directories(
 #  include/multiple_hypothesis_plugin.h
 #)
 
-
-add_library(ed_multiple_hypothesis_plugin
+add_library(wired
   src/multiple_hypothesis_plugin.cpp
   include/multiple_hypothesis_plugin.h
   include/featureProperties_info.h
 )
 
-target_link_libraries(ed_multiple_hypothesis_plugin ed_core wire ${catkin_LIBRARIES})
+target_link_libraries(wired ed_core wire wire_state_estimators ${catkin_LIBRARIES})
+#target_link_libraries(wired ed_core wire positionanddimension_estimator wire_state_estimators ${catkin_LIBRARIES})
 #add_dependencies(ed_multiple_hypothesis_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS})
 #add_dependencies(ed_multiple_hypothesis_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS})
 

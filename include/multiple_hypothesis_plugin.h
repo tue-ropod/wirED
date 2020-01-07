@@ -25,7 +25,7 @@
 #include "wire/storage/SemanticObject.h"
 #include "wire/util/ObjectModelParser.h"
 
-#include "featureProperties.h"
+#include "wire_state_estimators/featureProperties.h"
 #include "featureProperties_info.h"
 
 //ed_multiple_hypothesis_plugin

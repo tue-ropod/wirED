@@ -2,15 +2,7 @@
 #define ED_PLUGIN_FEATUREPROPERTIES_INFO_H_
 
 #include <ed/property_info.h>
-//#include <ed>
-//#include "../../../src/laser/feature_functions.h"
-
-//#include <wire_state_estimators/include/featureProperties.h>
-#include <featureProperties.h>
-//#include <ed_laser_plugin_tracking/feature_functions.h>
-
-// #include <problib/include/problib.h>
-// #include <problib/pdfs/PMF.h>
+#include <wire_state_estimators/featureProperties.h>
 
 class FeaturPropertiesInfo : public ed::PropertyInfo
 {
