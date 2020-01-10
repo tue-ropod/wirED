@@ -2,11 +2,11 @@
 #include <ed/update_request.h>
 //#include "wire_core/include/wire/WorldModelROS.h"
 
-
-
 #include <iostream>
 #include <typeinfo>
 
+
+ // TODO Problem: objects of MAP-hypothesis are propagated in an object clone. Checking for an old update age is not done on a fixed rate base. Where an how to do?
 // ----------------------------------------------------------------------------------------------------
 
 Wired::Wired(tf::TransformListener* tf_listener) :   tf_listener_(tf_listener), is_tf_owner_(false)
@@ -99,7 +99,7 @@ void Wired::initialize(ed::InitData& init)
 
 void Wired::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 {   
-//     std::cout << "WIRED: process" << std::endl;
+//     std::cout << "WIRED: process start" << std::endl;
     processEvidence(maxLoopDuration_, req);
          
     ++printCounter_;
@@ -107,6 +107,7 @@ void Wired::process(const ed::WorldModel& world, ed::UpdateRequest& req)
        showStatistics();
        printCounter_ = 0;
     } 
+//     std::cout << "WIRED: process finished" << std::endl;
 }
 
 void Wired::processEvidence(const double max_duration, ed::UpdateRequest& req) {
@@ -118,7 +119,8 @@ void Wired::processEvidence(const double max_duration, ed::UpdateRequest& req) {
     
     boost::shared_ptr<wiredDataBuffer> wiredBuffer =boost::static_pointer_cast<wiredDataBuffer>( getDataBuffer() );
     wire_msgs::WorldEvidence world_evidence;
-          
+    
+//     std::cout << "while over buffer: start" << std::endl;
     while( wiredBuffer->getBuffer().is_not_empty() && ros::Time::now() - start_time < d)  // This ensures that we do not wait for until new data are published
     { 
         ros::Time time_before_update = ros::Time::now();     
@@ -132,15 +134,16 @@ void Wired::processEvidence(const double max_duration, ed::UpdateRequest& req) {
 
         //evidence_buffer_.pop_back(); // TODO define this evidence buffer
     }
+//     std::cout << "while over buffer: end" << std::endl;
     
     ros::Duration duration = ros::Time::now() - start_time;
     bool timeCheck = ros::Time::now() - start_time < d;
     
 //     publish(); // TEMP TODO
-
+// std::cout << "Before hypothesis2Entity" << std::endl;
     hypothesis2Entity(hypothesisTree_->getMAPHypothesis(), req);
    
-    //std::cout << "Duration = " << duration.toSec() << " time check = "  << timeCheck << " max_duration = " << max_duration << std::endl;//" evidence buffer size  = " << evidence_buffer_.size() << std::endl;
+//     std::cout << "Duration = " << duration.toSec() << " time check = "  << timeCheck << " max_duration = " << max_duration << std::endl;//" evidence buffer size  = " << evidence_buffer_.size() << std::endl;
 }
 
 void Wired::processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg) {
@@ -369,6 +372,9 @@ bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req
         mhf::SemanticObject* semObj = *it;
             
         mhf::SemanticObject* obj_clone = (*it)->clone();
+        std::cout << " hypothesis2Entity: obj_clone->propagate(time.toSec()) going to be called." << std::endl;
+        
+       
         obj_clone->propagate(time.toSec());
 
         if (object2Entity(*obj_clone, req)) {
@@ -400,7 +406,7 @@ bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req
         
         req.removeEntity (id );
    }
-          std::cout << "\n";
+//           std::cout << "\n";
           
         objectIDs2entitiesPrev_->clear();
         
@@ -432,18 +438,21 @@ void Wired::swapPointers(std::vector<mhf::ObjectID> **r, std::vector<mhf::Object
 
 bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req) const
 {
+//         std::cout << "object2Entity start" << std::endl;
+//                  std::cout << "object2Entity: going to convert object to entity, obj id = " << obj.getID() << std::endl;
          ros::Time time = ros::Time::now();
-         std::shared_ptr<const pbl::PDF> pdf = obj.getProperty("positionAndDimension")->getValue();
-       
-//         std::cout << "object2Entity: going to convert object to entity, obj id = " << obj.getID() << std::endl;
-         
-      //   std::vector<mhf::ObjectID> objectIDs2entities;
-        
+         std::shared_ptr<const pbl::PDF> pdf = obj.getProperty("positionAndDimension")->getFullValue();
+
          if( pdf )
          {
 //                  std::cout << "PDF-check passed" << std::endl;
                  tracking::FeatureProperties featureProperties;
-                 featureProperties.setFeatureProperties(pdf);
+                 
+//                  std::cout << "object2Entity: pdf = " << pdf->toString() << std::endl;
+                 
+                 featureProperties.setObservedFeatureProperties(pdf);
+//                  std::cout << " object2Entity: featureProperties = "; featureProperties.printProperties();
+                 
                  double existenceProbability = 1.0; // TODO magic number
                         
                  geo::Pose3D pose;
@@ -492,10 +501,6 @@ bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req
                          }
                  }
          }
-           
-           
-           //
-           
         
         // TODO general properties and PDF's to ED. 
         /*
@@ -512,8 +517,11 @@ bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req
         msg.properties.push_back(prop_msg);
     }
 
-    return true;
+    
     */
+        //         std::cout << "object2Entity end" << std::endl;
+        return true;
+
 }
 
 /*
