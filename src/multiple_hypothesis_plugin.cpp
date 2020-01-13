@@ -51,6 +51,7 @@ void Wired::initialize(ed::InitData& init)
     if (!config.value("min_probability_ratio", min_prob_ratio_, tue::OPTIONAL))   { min_prob_ratio_ = 1e-10;}
     if (!config.value("bufferName", bufferName, tue::OPTIONAL))                   { bufferName = "MHT-buffer";}
     if (!config.value("bufferSize", bufferSize, tue::OPTIONAL))                   { bufferSize = 100;}
+    if (!config.value("object_timeout", object_timeout_, tue::OPTIONAL))          { object_timeout_ = 100;}
         
     // print init values
     std::cout << "WirED is initialized with the following values:" << std::endl;
@@ -58,6 +59,7 @@ void Wired::initialize(ed::InitData& init)
     std::cout << "output_frame = " << output_frame_id_ << std::endl;
     std::cout << "max_num_hypotheses = " << max_num_hyps_ << std::endl;
     std::cout << "min_probability_ratio = " << min_prob_ratio_ << std::endl;
+    std::cout << "object_timeout = " << object_timeout_ << std::endl;
     
     std::cout << "\nThe following knowledge is loaded: " << std::endl;
     mhf::ObjectModelParser parser(config);
@@ -108,6 +110,7 @@ void Wired::process(const ed::WorldModel& world, ed::UpdateRequest& req)
        printCounter_ = 0;
     } 
 //     std::cout << "WIRED: process finished" << std::endl;
+std::cout << " \n" ;
 }
 
 void Wired::processEvidence(const double max_duration, ed::UpdateRequest& req) {
@@ -139,7 +142,8 @@ void Wired::processEvidence(const double max_duration, ed::UpdateRequest& req) {
     ros::Duration duration = ros::Time::now() - start_time;
     bool timeCheck = ros::Time::now() - start_time < d;
     
-//     publish(); // TEMP TODO
+    hypothesisTree_->removeOldObjects( start_time.toSec() - object_timeout_ );
+     
 // std::cout << "Before hypothesis2Entity" << std::endl;
     hypothesis2Entity(hypothesisTree_->getMAPHypothesis(), req);
    
@@ -191,6 +195,9 @@ void Wired::processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg) 
                     if (!transformPosition(pdf, world_evidence_msg.header.frame_id, pos_pdf)) {
                         // position is a necessary property. If the transform was not successful, abort and don't use the evidence
                         position_ok = false;
+                        
+                        ROS_WARN("wired, processEvidence: position_ok == false");
+                        
                         break;
                     } else {
                         meas->addProperty(mhf::AttributeConv::attribute(prop.attribute), *pos_pdf);
@@ -206,6 +213,7 @@ void Wired::processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg) 
                 //delete pdf;
             } else {
                 ROS_ERROR_STREAM("For attribute '" << prop.attribute << "': malformed pdf: " << prop.pdf);
+                 ROS_WARN("MHT-plugin: malformed pdf");
             }
         }
 
@@ -372,7 +380,7 @@ bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req
         mhf::SemanticObject* semObj = *it;
             
         mhf::SemanticObject* obj_clone = (*it)->clone();
-        std::cout << " hypothesis2Entity: obj_clone->propagate(time.toSec()) going to be called." << std::endl;
+//         std::cout << " hypothesis2Entity: obj_clone->propagate(time.toSec()) going to be called." << std::endl;
         
        
         obj_clone->propagate(time.toSec());
@@ -388,6 +396,14 @@ bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req
 
 //   std::cout << "objectIDs2entities_ = " << objectIDs2entities_ << " objectIDs2entitiesPrev_ = " << objectIDs2entitiesPrev_  << std::endl;
 
+//   std::cout << "objectIDs2entitiesPrev_: " << std::endl;
+//   for(std::vector<mhf::ObjectID>::const_iterator it = objectIDs2entitiesPrev_->begin(); it != objectIDs2entitiesPrev_->end(); ++it) 
+//   {
+//            mhf::ObjectID objectID = *it;
+//            std::cout << "\tid = " << objectID ;
+//   }
+//   std::cout << "\n";
+// 
 //   std::cout << "objectIDs2entities_: " << std::endl;
 //   for(std::vector<mhf::ObjectID>::const_iterator it = objectIDs2entities_->begin(); it != objectIDs2entities_->end(); ++it) 
 //   {
@@ -395,18 +411,16 @@ bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req
 //            std::cout << "\tid = " << objectID ;
 //   }
 //   std::cout << "\n";
-          
-//   std::cout << "objectIDs2entitiesPrev_, going to remove entities: " << std::endl;
+//           
+//    std::cout << "objectIDs2entitiesPrev_, going to remove remaining entities having ids : " << std::endl;
   for(std::vector<mhf::ObjectID>::const_iterator it = objectIDs2entitiesPrev_->begin(); it != objectIDs2entitiesPrev_->end(); ++it) 
   {
         // remove all objects which are not in the current hypothesis anymore
         mhf::ObjectID objectID = *it;
         ed::UUID id = getEntityIDForMHTObject(objectID);
-//         std::cout << "\tid = " << objectID;
-        
         req.removeEntity (id );
    }
-//           std::cout << "\n";
+          std::cout << "\n";
           
         objectIDs2entitiesPrev_->clear();
         
@@ -557,7 +571,7 @@ ed::UUID Wired::getEntityIDForMHTObject(mhf::ObjectID objectID) const { return "
 void Wired::showStatistics() const {
     std::printf("***** %f *****\n", ros::Time::now().toSec());
     hypothesisTree_->showStatistics();
-    std::cout << "Num MAP objects:      " << hypothesisTree_->getMAPObjects()->size() << std::endl;
+    std::cout << "Num MAP objects:      " << hypothesisTree_->getMAPObjects()->size() << std::endl; 
     std::cout << "Last update:          " << last_update_duration << " seconds" << std::endl;
     std::cout << "Max update:           " << max_update_duration << " seconds" << std:: endl;
 //    cout << "Evidence buffer size: " << evidence_buffer_.size() << endl; // TODO create own datatype for evidence
