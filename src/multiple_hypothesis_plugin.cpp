@@ -268,20 +268,20 @@ bool Wired::transformOrientation(std::shared_ptr<const pbl::PDF> pdf_in, const s
 bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req) {
     ros::Time time = ros::Time::now();
          
-    const std::list<mhf::SemanticObject*>* objs = hyp.getObjects();    
+    const std::list<std::shared_ptr<mhf::SemanticObject>>* objs = hyp.getObjects();    
     
-    for(std::list<mhf::SemanticObject*>::const_iterator it = objs->begin(); it != objs->end(); ++it) 
+    for(std::list<std::shared_ptr<mhf::SemanticObject>>::const_iterator it = objs->begin(); it != objs->end(); ++it) 
     {
-        mhf::SemanticObject* semObj = *it;
+        std::shared_ptr<mhf::SemanticObject> semObj = *it;
             
-        mhf::SemanticObject* obj_clone = (*it)->clone();
+        std::shared_ptr<mhf::SemanticObject> obj_clone = (*it)->cloneThis();
        
         obj_clone->propagate(time.toSec());
 
         if (object2Entity(*obj_clone, req)) {
         }
 
-        delete obj_clone;
+//         delete obj_clone;
     } 
     
     for(std::vector<mhf::ObjectID>::const_iterator it = objectIDs2entitiesPrev_->begin(); it != objectIDs2entitiesPrev_->end(); ++it) 
@@ -290,6 +290,8 @@ bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req
         mhf::ObjectID objectID = *it;
         ed::UUID id = getEntityIDForMHTObject(objectID);
         req.removeEntity (id );
+        
+         std::cout << "Wired::hypothesis2Entity: request to remove entity with id = " << id << std::endl;
     }
           
     objectIDs2entitiesPrev_->clear();
@@ -337,6 +339,9 @@ bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req
                          
                 ed::UUID id = getEntityIDForMHTObject(obj.getID());
                 
+                std::cout << "Wired::object2Entity: " << std::endl;
+                featureProperties.printProperties();
+                
                 req.setProperty ( id, featureProperties_, featureProperties );
                 req.setLastUpdateTimestamp ( id, time.toSec() ); // TODO desired time? Communicate the meaurement time. Do not use the propagated time.
                 req.setPose ( id, pose );
@@ -362,7 +367,7 @@ bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req
 
 }
 
-const std::list<mhf::SemanticObject*>* Wired::getMAPObjects() const {
+const std::list<std::shared_ptr<mhf::SemanticObject>>* Wired::getMAPObjects() const {
     return hypothesisTree_->getMAPObjects();
 }
 

@@ -53,7 +53,7 @@ public:
     
     void processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg);
     
-     const std::list<mhf::SemanticObject*>* getMAPObjects() const;// TODO TEMP?
+     const std::list<std::shared_ptr<mhf::SemanticObject>>* getMAPObjects() const;// TODO TEMP?
      
      void swapPointers(std::vector<mhf::ObjectID> **r, std::vector<mhf::ObjectID> **s);
     
