@@ -65,46 +65,10 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-# ------------------------------------------------------------------------------------------------
-#                                          ED CORE
-# ------------------------------------------------------------------------------------------------
-
-
-# ------------------------------------------------------------------------------------------------
-#                                               PLUGINS
-# ------------------------------------------------------------------------------------------------
-
-
-
-# ------------------------------------------------------------------------------------------------
-#                                                TOOLS
-# ------------------------------------------------------------------------------------------------
-
-
-# ------------------------------------------------------------------------------------------------
-#                                               EXAMPLE PLUGIN
-# ------------------------------------------------------------------------------------------------
-
-#add_library(ed_data_buffer
-#  include/multiple_hypothesis_plugin.h
-#)
-
-add_library(ed_multiple_hypothesis_plugin
+add_library(wired
   src/multiple_hypothesis_plugin.cpp
   include/multiple_hypothesis_plugin.h
   include/featureProperties_info.h
 )
 
-target_link_libraries(ed_multiple_hypothesis_plugin ed_core wire wire_state_estimators ${catkin_LIBRARIES})
-#target_link_libraries(libed_multiple_hypothesis_plugin ed_core wire positionanddimension_estimator wire_state_estimators ${catkin_LIBRARIES})
-#add_dependencies(ed_multiple_hypothesis_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS})
-#add_dependencies(ed_multiple_hypothesis_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS})
-
-#add_library(ed_multiple_hypothesis_plugin src/multiple_hypothesis_plugin.cpp)
-#add_library(ed_custom_properties_plugin examples/custom_properties/custom_properties_plugin.cpp)
-
-
-
-# ------------------------------------------------------------------------------------------------
-#                                                TESTS
-# ------------------------------------------------------------------------------------------------
+target_link_libraries(wired ed_core wire wire_state_estimators ${catkin_LIBRARIES})

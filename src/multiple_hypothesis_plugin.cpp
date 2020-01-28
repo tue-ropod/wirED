@@ -339,7 +339,7 @@ bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req
                          
                 ed::UUID id = getEntityIDForMHTObject(obj.getID());
                 
-                std::cout << "Wired::object2Entity: " << std::endl;
+                std::cout << "Wired::object " << id << " to entity: " << std::endl;
                 featureProperties.printProperties();
                 
                 req.setProperty ( id, featureProperties_, featureProperties );
