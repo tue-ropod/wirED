@@ -56,6 +56,12 @@ public:
      const std::list<std::shared_ptr<mhf::SemanticObject>>* getMAPObjects() const;// TODO TEMP?
      
      void swapPointers(std::vector<mhf::ObjectID> **r, std::vector<mhf::ObjectID> **s);
+     
+     void printFeaturePropertiesOfObject(const mhf::SemanticObject& obj) const;
+     
+     void printObjectsInHypotheses() const;
+     
+     void printObjectsInHypothesis(const mhf::Hypothesis& hyp) const;
     
 protected:
         
@@ -110,7 +116,7 @@ protected:
 
    // bool hypothesis2Msg(const mhf::Hypothesis& hyp, wire_msgs::WorldState& msg) const; // TODO TEMP
 
-    bool hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req);
+    bool hypothesis2Entities(const mhf::Hypothesis& hyp, ed::UpdateRequest& req);
     
     bool object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req) const;
     

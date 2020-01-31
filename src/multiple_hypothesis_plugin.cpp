@@ -128,7 +128,9 @@ void Wired::processEvidence(const double max_duration, ed::UpdateRequest& req) {
     bool timeCheck = ros::Time::now() - start_time < d;
     
     hypothesisTree_->removeOldObjects( start_time.toSec() - object_timeout_ );
-    hypothesis2Entity(hypothesisTree_->getMAPHypothesis(), req);
+    hypothesis2Entities(hypothesisTree_->getMAPHypothesis(), req);
+    
+//     printObjectsInHypotheses();
 }
 
 void Wired::processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg) {
@@ -265,7 +267,7 @@ bool Wired::transformOrientation(std::shared_ptr<const pbl::PDF> pdf_in, const s
     return true;
 }
 
-bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req) {
+bool Wired::hypothesis2Entities(const mhf::Hypothesis& hyp, ed::UpdateRequest& req) {
     ros::Time time = ros::Time::now();
          
     const std::list<std::shared_ptr<mhf::SemanticObject>>* objs = hyp.getObjects();    
@@ -291,7 +293,7 @@ bool Wired::hypothesis2Entity(const mhf::Hypothesis& hyp, ed::UpdateRequest& req
         ed::UUID id = getEntityIDForMHTObject(objectID);
         req.removeEntity (id );
         
-         std::cout << "Wired::hypothesis2Entity: request to remove entity with id = " << id << std::endl;
+         std::cout << "Wired::hypothesis2Entities: request to remove entity with id = " << id << std::endl;
     }
           
     objectIDs2entitiesPrev_->clear();
@@ -339,8 +341,8 @@ bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req
                          
                 ed::UUID id = getEntityIDForMHTObject(obj.getID());
                 
-                std::cout << "Wired::object " << id << " to entity: " << std::endl;
-                featureProperties.printProperties();
+//                 std::cout << "Wired::object " << id << " to entity: " << std::endl;
+//                 featureProperties.printProperties();
                 
                 req.setProperty ( id, featureProperties_, featureProperties );
                 req.setLastUpdateTimestamp ( id, time.toSec() ); // TODO desired time? Communicate the meaurement time. Do not use the propagated time.
@@ -365,6 +367,52 @@ bool Wired::object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req
         // TODO general properties and PDF's to ED. 
         return true;
 
+}
+
+void Wired::printObjectsInHypotheses() const
+{
+    const std::list<mhf::Hypothesis*>& allHyp = hypothesisTree_->getHypotheses();
+    
+    for(std::list<mhf::Hypothesis*>::const_iterator itHyp = allHyp.begin(); itHyp != allHyp.end(); itHyp++)
+    {
+            mhf::Hypothesis* hyp = *itHyp;
+            hyp->showStatictics();
+            std::cout << " objects are" << std::endl; 
+            printObjectsInHypothesis(*hyp);
+            
+            std::cout << "\n\n" << std::endl;
+    }
+}
+
+void Wired::printObjectsInHypothesis(const mhf::Hypothesis& hyp) const
+{
+    ros::Time time = ros::Time::now();
+    const std::list<std::shared_ptr<mhf::SemanticObject>>* objs = hyp.getObjects(); 
+    
+    for(std::list<std::shared_ptr<mhf::SemanticObject>>::const_iterator it = objs->begin(); it != objs->end(); ++it) 
+    {
+        std::shared_ptr<mhf::SemanticObject> semObj = *it;
+            
+        std::shared_ptr<mhf::SemanticObject> obj_clone = (*it)->cloneThis();
+       
+        obj_clone->propagate(time.toSec());
+
+        printFeaturePropertiesOfObject(*obj_clone);
+    } 
+}
+
+void Wired::printFeaturePropertiesOfObject(const mhf::SemanticObject& obj) const
+{
+        ros::Time time = ros::Time::now();
+        std::shared_ptr<const pbl::PDF> pdf = obj.getProperty("positionAndDimension")->getFullValue();
+
+        if( pdf )
+        {
+                std::cout << "FeatureProperties of object " << obj.getID() << " having pointer " << pdf << " are" << std::endl;
+                tracking::FeatureProperties featureProperties;
+                featureProperties.setObservedFeatureProperties(pdf);
+                featureProperties.printProperties();                
+        }
 }
 
 const std::list<std::shared_ptr<mhf::SemanticObject>>* Wired::getMAPObjects() const {
