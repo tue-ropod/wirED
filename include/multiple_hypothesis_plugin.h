@@ -102,6 +102,8 @@ protected:
     ed::PropertyKey<tracking::FeatureProperties> featureProperties_; 
     
     double object_timeout_;
+
+    bool single_object_assignment_;
     
    // world model publishers
  //   ros::Publisher pub_wm_; // TODO TEMP

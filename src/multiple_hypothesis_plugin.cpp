@@ -51,6 +51,8 @@ void Wired::initialize(ed::InitData& init)
     if (!config.value("bufferName", bufferName, tue::OPTIONAL))                   { bufferName = "MHT-buffer";}
     if (!config.value("bufferSize", bufferSize, tue::OPTIONAL))                   { bufferSize = 100;}
     if (!config.value("object_timeout", object_timeout_, tue::OPTIONAL))          { object_timeout_ = 100;}
+    if (!config.value("single_object_assignment", 
+                                single_object_assignment_, tue::OPTIONAL))        { single_object_assignment_ = true;}
         
     // print init values
     std::cout << "WirED is initialized with the following values:" << std::endl;
@@ -59,6 +61,7 @@ void Wired::initialize(ed::InitData& init)
     std::cout << "max_num_hypotheses = " << max_num_hyps_ << std::endl;
     std::cout << "min_probability_ratio = " << min_prob_ratio_ << std::endl;
     std::cout << "object_timeout = " << object_timeout_ << std::endl;
+    std::cout << "single_object_assignment = " << single_object_assignment_ << std::endl;
     
     std::cout << "\nThe following knowledge is loaded: " << std::endl;
     mhf::ObjectModelParser parser(config);
@@ -77,7 +80,8 @@ void Wired::initialize(ed::InitData& init)
         is_tf_owner_ = true;
     }
     
-    hypothesisTree_ = new mhf::HypothesisTree(max_num_hyps_, min_prob_ratio_);
+    //hypothesisTree_ = new mhf::HypothesisTree(max_num_hyps_, min_prob_ratio_);
+    hypothesisTree_ = new mhf::HypothesisTree(max_num_hyps_, min_prob_ratio_, single_object_assignment_);
     printCounter_ = 0;
     maxLoopDuration_ = 1/this->getLoopFrequency();
     
@@ -128,6 +132,7 @@ void Wired::processEvidence(const double max_duration, ed::UpdateRequest& req) {
     bool timeCheck = ros::Time::now() - start_time < d;
     
     hypothesisTree_->removeOldObjects( start_time.toSec() - object_timeout_ );
+
     hypothesis2Entities(hypothesisTree_->getMAPHypothesis(), req);
     
 //     printObjectsInHypotheses();
@@ -140,7 +145,7 @@ void Wired::processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg) 
         ROS_WARN("Saw a negative time change of %f seconds; resetting the world model.", (current_time - last_update_).toSec());
         
         delete hypothesisTree_;
-        hypothesisTree_ = new mhf::HypothesisTree(max_num_hyps_, min_prob_ratio_);
+        hypothesisTree_ = new mhf::HypothesisTree(max_num_hyps_, min_prob_ratio_, single_object_assignment_);
     }
     last_update_ = current_time;
 
