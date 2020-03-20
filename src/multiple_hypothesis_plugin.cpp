@@ -206,6 +206,7 @@ void Wired::processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg) 
 
     } // end iteration over object evidence list
 
+    std::cout << "The following evidence is added:\n" << evidence_set.toString() << std::endl;
     
     hypothesisTree_->addEvidence(evidence_set); // Here, we process the evidence in the HypothesisTree having current_time (the time at which we started the process evidence)
     // as variable
