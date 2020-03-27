@@ -2,7 +2,7 @@
 #define ED_PLUGIN_FEATUREPROPERTIES_INFO_H_
 
 #include <ed/property_info.h>
-#include <wire_state_estimators/featureProperties.h>
+#include <featureProperties.h>
 
 class FeaturPropertiesInfo : public ed::PropertyInfo
 {

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(wired)
 
-set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+#set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 #set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined") 
@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   ed
   wire_core
   wire_msgs
-  wire_state_estimators
+  wire_features_lib
 )
 
 #find_package(wire_state_estimators
@@ -53,7 +53,7 @@ catkin_package(
   LIBRARIES  ${PROJECT_NAME}
  #   CATKIN_DEPENDS geometry_msgs message_runtime
   CATKIN_DEPENDS
-    wire_core wire_state_estimators
+    wire_core wire_features_lib
 )
 
 ###########
@@ -71,4 +71,4 @@ add_library(wired
   include/featureProperties_info.h
 )
 
-target_link_libraries(wired ed_core wire wire_state_estimators ${catkin_LIBRARIES})
+target_link_libraries(wired ed_core wire ${catkin_LIBRARIES})

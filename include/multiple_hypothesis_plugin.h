@@ -25,8 +25,8 @@
 #include "wire/storage/SemanticObject.h"
 #include "wire/util/ObjectModelParser.h"
 
-#include "wire_state_estimators/featureProperties.h"
 #include "featureProperties_info.h"
+#include "featureProperties.h"
 
 //ed_multiple_hypothesis_plugin
 
@@ -123,8 +123,6 @@ protected:
     bool object2Entity(const mhf::SemanticObject& obj, ed::UpdateRequest& req) const;
     
     ed::UUID getEntityIDForMHTObject(mhf::ObjectID objectID) const;
-    
-
 };
 
 #endif
