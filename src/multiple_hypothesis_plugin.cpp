@@ -136,6 +136,8 @@ void Wired::processEvidence(const double max_duration, ed::UpdateRequest& req) {
     hypothesis2Entities(hypothesisTree_->getMAPHypothesis(), req);
     
 //     printObjectsInHypotheses();
+
+    printObjectsInHypothesis(hypothesisTree_->getMAPHypothesis());
 }
 
 void Wired::processEvidence(const wire_msgs::WorldEvidence& world_evidence_msg) {
